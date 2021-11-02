@@ -1,0 +1,15 @@
+[Unit]
+Description=NTP Monitor
+After=network.target 
+
+[Service]
+User=root
+Restart=always
+EnvironmentFile=-/usr/local/ntp-monitoring//ntpd_exporter/ntpd_exporter.defaults
+ExecStart=/usr/local/ntp-monitoring/ntpd_exporter/ntpd_exporter.py $NTPD_EXPORTER_OPTIONS
+Type=simple
+Environment="PYTHONUNBUFFERED=1"
+
+[Install]
+WantedBy=multi-user.target
+Alias=monitor_ntp.service
