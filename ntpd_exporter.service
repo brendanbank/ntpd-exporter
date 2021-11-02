@@ -5,8 +5,8 @@ After=network.target
 [Service]
 User=root
 Restart=always
-EnvironmentFile=-/usr/local/ntp-monitoring//ntpd_exporter/ntpd_exporter.defaults
-ExecStart=/usr/local/ntp-monitoring/ntpd_exporter/ntpd_exporter.py $NTPD_EXPORTER_OPTIONS
+EnvironmentFile=-/etc/default/ntpd_exporter.defaults
+ExecStart=/usr/local/bin/ntpd_exporter.py $NTPD_EXPORTER_OPTIONS
 Type=simple
 Environment="PYTHONUNBUFFERED=1"
 
