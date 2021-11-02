@@ -249,7 +249,7 @@ class MonitoringThread(threading.Thread):
 
         dtime = self._run_at - time.time()
         
-        if ( dtime > 0 and dtime < 1):
+        if (dtime > 0 and dtime < 1):
             self.log.debug(f'{self.name} run in {dtime:0.6f} seconds')
             time.sleep(dtime)
 
@@ -329,6 +329,7 @@ class NtpStats(MonitoringThread):
                         
                     except NTPException as e:
                         self.log.error(f'{self.name}: error received {e}')
+
                 
 class PacketCounter(MonitoringThread):
     """ read system """
@@ -351,16 +352,15 @@ class PacketCounter(MonitoringThread):
         }
     
     def init_metrics(self):
-        self.metrics={}
-        for k,v in self.DICTVAR.items():
-            self.metrics[self.DICTVAR[k]] = Gauge(NtpMetrics.PREFIX + '_' + v, 
+        self.metrics = {}
+        for k, v in self.DICTVAR.items():
+            self.metrics[self.DICTVAR[k]] = Gauge(NtpMetrics.PREFIX + '_' + v,
                     f'sysstat variable {k}', ['timeserver'], registry=self.registry)
         self.ntpq = None
-        for f in ["/usr/sbin/ntpq","/usr/bin/ntpq","/usr/local/bin/ntpq"]:
+        for f in ["/usr/sbin/ntpq", "/usr/bin/ntpq", "/usr/local/bin/ntpq"]:
             if (os.path.exists(f)):
                 self.ntpq = f
                 break
-                
     
     def run(self):
         self.log.info (f'Thread run {self.name}')
@@ -372,7 +372,7 @@ class PacketCounter(MonitoringThread):
                 for hostname in self.args.hosts:
                     self.get_packet_stats(hostname)
 
-    def get_packet_stats(self,hostname):
+    def get_packet_stats(self, hostname):
         
         proc = subprocess.Popen([self.ntpq, '-c', 'sysstat', hostname], stdout=subprocess.PIPE)
     
@@ -383,7 +383,7 @@ class PacketCounter(MonitoringThread):
             line = line.rstrip()
 
             self.log.debug(f'{self.name} line = {line}')
-            (k,v) = line.rstrip().split(':')
+            (k, v) = line.rstrip().split(':')
             k = k.lstrip()
             v = v.lstrip()
 
@@ -404,7 +404,7 @@ class ExporterDebug(MonitoringThread):
             if (self.poll()):
                 self.log.debug(f'run {self.name}')
                 
-                #self.log.debug(generate_latest(registry=self.registry).decode())
+                # self.log.debug(generate_latest(registry=self.registry).decode())
 
 
 class MonitorPoolQuality(MonitoringThread):
@@ -611,7 +611,7 @@ class NtpMetrics(object):
         
         JITTER_BUCKET = []
         JITTER_BUCKET.append(float("-inf"))
-        [ JITTER_BUCKET.append(f'{i * (offset_bucket_size/2):0.9f}') for i in range(0 ,int(offset_bucket_count)) ]
+        [ JITTER_BUCKET.append(f'{i * (offset_bucket_size/2):0.9f}') for i in range(0 , int(offset_bucket_count)) ]
         JITTER_BUCKET.append(float("inf"))
         
         init_metrics['sys_jitter'] = Histogram(self.PREFIX + '_sys_jitter_histogram', 'System Jitter Histogram',
@@ -625,7 +625,6 @@ class NtpMetrics(object):
         WANDER_BUCKETS.append(float("inf"))
         init_metrics['clk_wander'] = Histogram(self.PREFIX + '_clk_wander_histogram', 'Clock Wander Histogram PPB',
                                             ['timeserver'], buckets=WANDER_BUCKETS, registry=registry)
-
         
         return(init_metrics)
         
@@ -709,7 +708,7 @@ class NtpMetrics(object):
 
     def _resolve(self, ip):
         
-        #ip = f'{ip}2'
+        # ip = f'{ip}2'
         
         timeout = socket.getdefaulttimeout() 
         socket.setdefaulttimeout(1)
