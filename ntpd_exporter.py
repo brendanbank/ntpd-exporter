@@ -632,7 +632,12 @@ class NtpdVar:
             
         self.session = session
         self.associd = associd
-        self.stats = session.readvar(0, opcode=self._opcode, raw=False)
+        self.stats = None
+        try:
+            self.stats = session.readvar(self.associd, opcode=self._opcode, raw=False)
+        except ntp.packet.ControlException as e:
+            print (f"this host does not look like is has it's own clock {e}")
+            
 
 
 class NtpdClockVar(NtpdVar):
