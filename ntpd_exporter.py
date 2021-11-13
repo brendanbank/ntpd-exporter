@@ -238,8 +238,10 @@ class PacketCounter(MonitoringThread):
             key = sysstat._ntpvars[k]
             ntpvar = self.DICTVAR[key]
             self.log.debug (f'key = {k} translate {key} to {ntpvar} = {sysstat.stats[k]}')
-            self.metrics[ntpvar].labels(hostname).set(sysstat.stats[k])
-
+            if not sysstat.stats[k]:
+                self.log.debug (f'key {key} == None')
+            else:
+                self.metrics[ntpvar].labels(hostname).set(sysstat.stats[k])
 
 class ExporterDebug(MonitoringThread):
     """ read system """
