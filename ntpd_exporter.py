@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # ntpq - query an NTP server using mode 6 commands
@@ -238,10 +238,7 @@ class PacketCounter(MonitoringThread):
             key = sysstat._ntpvars[k]
             ntpvar = self.DICTVAR[key]
             self.log.debug (f'key = {k} translate {key} to {ntpvar} = {sysstat.stats[k]}')
-            if not sysstat.stats[k]:
-                self.log.debug (f'key {key} == None')
-            else:
-                self.metrics[ntpvar].labels(hostname).set(sysstat.stats[k])
+            self.metrics[ntpvar].labels(hostname).set(sysstat.stats[k])
 
 
 class ExporterDebug(MonitoringThread):
@@ -258,6 +255,14 @@ class ExporterDebug(MonitoringThread):
                 
                 # self.log.debug(generate_latest(registry=self.registry).decode())
 
+class NtpMetricsException(Exception):
+    """Exception raised by this module."""
+    pass
+
+
+class NTPException(Exception):
+    """Exception raised by this module."""
+    pass
 
 class NtpOffsetHistogram(MonitoringThread):
     """ read system """
