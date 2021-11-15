@@ -31,9 +31,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 '''
-ntpd_mon -- ntpd realtime monitor
+ntpd_exporter -- ntpd realtime monitor
 
-ntpd_mon is a exporter for prometheus
+ntpd_exporter is a exporter for prometheus
 
 @author:     Brendan Bank
 
