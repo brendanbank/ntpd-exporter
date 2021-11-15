@@ -4,15 +4,15 @@ ntpd exporter for prometheus
 
 ## Instalation:
 
-Make sure gpsd, prometheus and grafana are properly running. `gpsd-prometheus-exporter`needs `python3` and the following python libraries:
+Make sure ntpd, prometheus and grafana are properly running. `ntpd-exporter`needs `python3` and the following python libraries:
 
 * [prometheus_client](https://github.com/prometheus/client_python)
 * ntp-python libraries from ntpsec
+* Running [ntpsec](https://www.ntpsec.org/) is preferred 
 
 To install:
 
 	pip3 install prometheus_client
-	pip3 install gps
 
 	
 If you want the `ntpd-exporter` to be loaded automatically by `systemd` please copy `ntpd_exporter.defaults` to 
@@ -26,33 +26,39 @@ If you want the `ntpd-exporter` to be loaded automatically by `systemd` please c
 
 	
 
-ntpd_mon -- ntpd realtime monitor
-
-  Created by Brendan Bank on 2021-01-12.
-  Copyright 2021 Brendan Bank. All rights reserved.
-
-  Licensed under the 3-Clause BSD License
-  https://opensource.org/licenses/BSD-3-Clause
-
-USAGE
-
-positional arguments:
-  host                  hosts to query [default: ['127.0.0.1']]
-
-options:
-  -h, --help            show this help message and exit
-  -v, --verbose         set verbosity level [default: 0]
-  -d, --debug           set Debug level [default: 0]
-  -V, --version         show program's version number and exit
-  --exporter-port EXPORTER_PORT
-                        set TCP Port for the exporter server [default: 9014]
-  --ntppool-hostname NTPPOOLHOST
-                        set ntp pool hostname to query [default: []]
-  --disable-offset-histogram
-                        Disable ntp offset observations every 2 seconds
-  --histogram-bucket-size OFFSET_BUCKET_SIZE
-                        set lower bound histogram bucket [default: 2.5e-07]
-  --histogram-bucket-count OFFSET_BUCKET_COUNT
-                        set number of buckets for the ntp offset histogram
-                        [default: 40]
+	usage: ntpd_exporter.py [-h] [-v] [-d] [-V] [--exporter-port EXPORTER_PORT]
+	                        [--ntppool-hostname NTPPOOLHOST]
+	                        [--disable-offset-histogram]
+	                        [--histogram-bucket-size OFFSET_BUCKET_SIZE]
+	                        [--histogram-bucket-count OFFSET_BUCKET_COUNT]
+	                        [host ...]
 	
+	ntpd_exporter -- ntpd realtime monitor
+	
+	  Created by Brendan Bank on 2021-01-12.
+	  Copyright 2021 Brendan Bank. All rights reserved.
+	
+	  Licensed under the 3-Clause BSD License
+	  https://opensource.org/licenses/BSD-3-Clause
+	
+	USAGE
+	
+	positional arguments:
+	  host                  hosts to query [default: ['127.0.0.1']]
+	
+	options:
+	  -h, --help            show this help message and exit
+	  -v, --verbose         set verbosity level [default: 0]
+	  -d, --debug           set Debug level [default: 0]
+	  -V, --version         show program's version number and exit
+	  --exporter-port EXPORTER_PORT
+	                        set TCP Port for the exporter server [default: 9014]
+	  --ntppool-hostname NTPPOOLHOST
+	                        set ntp pool hostname to query [default: []]
+	  --disable-offset-histogram
+	                        Disable ntp offset observations every 2 seconds
+	  --histogram-bucket-size OFFSET_BUCKET_SIZE
+	                        set lower bound histogram bucket [default: 2.5e-07]
+	  --histogram-bucket-count OFFSET_BUCKET_COUNT
+	                        set number of buckets for the ntp offset histogram
+	                        [default: 40]
