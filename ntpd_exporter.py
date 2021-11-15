@@ -136,9 +136,9 @@ class NtpStats(MonitoringThread):
         
         (host_metrics, remote_metrics) = NtpMetrics.init_host_metrics(self.registry)
         
-        ntpq_metrics = {}
+        ntp_metrics = {}
         for hostname in self.args.hosts:
-            ntpq_metrics[hostname] = NtpMetrics(hostname=hostname,
+            ntp_metrics[hostname] = NtpMetrics(hostname=hostname,
                                                 host_metrics=host_metrics,
                                                 log=self.log,
                                                 remote_metrics=remote_metrics
@@ -148,7 +148,7 @@ class NtpStats(MonitoringThread):
         
             if (self.poll()):
                 
-                for hostname, instance in ntpq_metrics.items():
+                for hostname, instance in ntp_metrics.items():
                     try:
                         self.log.info(f'{self.name}: fetched stats from {hostname}')
                         instance.fetch()
@@ -212,7 +212,7 @@ class MonitorPoolQuality(MonitoringThread):
                 self.NTPPOOL_OFFSET.labels(hostname, monitor_id, monitor_name).set(offset)
 
 
-class PacketCounter(MonitoringThread):
+class PacketStats(MonitoringThread):
     """ read system """
     POLL_INTERVAL = 10
     
@@ -251,7 +251,13 @@ class PacketCounter(MonitoringThread):
     def get_packet_stats(self, hostname):
 
         session = NtpdConnect(hostname)
+        if not session:
+            return (None)
+            
         sysstat = NtpdSysStats(session)
+        if not sysstat:
+            return (None)
+
 
         for k in sysstat.stats:
             key = sysstat._ntpvars[k]
@@ -297,18 +303,21 @@ class NtpOffsetHistogram(MonitoringThread):
                                                    offset_bucket_size=self.args.offset_bucket_size,
                                                    offset_bucket_count=self.args.offset_bucket_count
                                                    )        
-            ntpq_metrics = {}
+            ntp_metrics = {}
             for hostname in self.args.hosts:
-                ntpq_metrics[hostname] = NtpMetrics(self.registry, log=self.log, hostname=hostname)
+                ntp_metrics[hostname] = NtpMetrics(self.registry, log=self.log, hostname=hostname)
 
         while (self.keep_running):
         
             if (self.poll() and self.args.offset_histogram):
                 self.log.debug(f'run {self.name} ')
                 
-                for hostname, metric in ntpq_metrics.items():
+                for hostname, metric in ntp_metrics.items():
                     try:
                         rt_metric_observed = metric.fetch_offset()
+                        if not rt_metric_observed:
+                            continue
+                            
                         self.log.debug(f'rt_metric_observed: {rt_metric_observed}')
                         for key in rt_metrics.keys():
                             
@@ -371,6 +380,9 @@ class NtpMetrics(object):
     def fetch(self):
 
         session = NtpdConnect(self.hostname)
+        if not session:
+            return (None)
+
         readvar = NtpdReadVar(session).stats
         readclock = NtpdClockVar(session).stats
 
@@ -448,6 +460,9 @@ class NtpMetrics(object):
 
     def fetch_offset(self):
         session = NtpdConnect(self.hostname)
+        if not session:
+            return (None)
+
         readvar = NtpdReadVar(session).stats
         readvar['offset'] = float(readvar['offset']) / 1000
         readvar['sys_jitter'] = float(readvar['sys_jitter']) / 1000
@@ -460,6 +475,10 @@ class NtpMetrics(object):
 
     def peers(self):
         session = NtpdConnect(self.hostname)
+        
+        if not session:
+            return (None)
+
         peers = collect_peer_varables(session)
         remotes = []
         for peer in peers:
@@ -785,11 +804,11 @@ USAGE
             logging.basicConfig(format='%(message)s', stream=sys.stderr, level=logging.WARNING)
 
         monitors = {
-            'ntpq_monitor': MonitorPoolQuality,
-            'ntpq_debug': ExporterDebug,
-            'ntpq_offset_histogram': NtpOffsetHistogram,
-            'ntpq_host_stats': NtpStats,
-            'ntpq_packet_counter': PacketCounter
+            'ntppool_monitor': MonitorPoolQuality,
+            'ntp_debug': ExporterDebug,
+            'ntp_offset_histogram': NtpOffsetHistogram,
+            'ntp_host_stats': NtpStats,
+            'ntp_packet_stats': PacketStats
         }
 
         for mon in monitors.keys():
@@ -873,7 +892,7 @@ def NtpdConnect(host, primary_timeout=1500, secondary_timeout=1000):
     try:
         session.fetch_nonce()
     except ntp.packet.ControlException as e:
-        print (f"could not connect to host: {host} '{e}'")
+        sys.stderr.write (f"could not connect to host: {host} '{e}")
         return(None)
     
     return(session)
