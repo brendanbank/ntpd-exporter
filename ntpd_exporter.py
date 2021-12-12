@@ -916,8 +916,9 @@ def queryhost(server, concurrent, timeout=1, port=123):
     request = ntp.packet.SyncPacket()
     request.transmit_timestamp = ntp.packet.SyncPacket.posix_to_ntp(
         time.time())
+    gap = .05
     packet = request.flatten()
-    needgap = (len(iptuples) > 1) 
+    needgap = (len(iptuples) > 1) and (gap > 0)
     firstloop = True
     for (family, socktype, proto, canonname, sockaddr) in iptuples:
         if needgap and not firstloop:
