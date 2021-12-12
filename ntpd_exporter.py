@@ -75,6 +75,8 @@ import signal
 import pwd
 import grp
 import subprocess
+import select
+
 
 log = logging.getLogger(__name__)
 
@@ -151,9 +153,14 @@ class NtpStats(MonitoringThread):
                 for hostname, instance in ntp_metrics.items():
                     try:
                         self.log.info(f'{self.name}: fetched stats from {hostname}')
-                        instance.fetch()
                         
-                        instance.peers()
+                        session = NtpdConnect(hostname)
+                        if not session:
+                            continue
+                        
+                        instance.fetch(session)
+                        
+                        instance.peers(session)
                         removed = instance.remove_expired_remotes()
 
                         for s in removed:
@@ -377,11 +384,8 @@ class NtpMetrics(object):
         self._remotes = []
         self._hostname_cache = {}
 
-    def fetch(self):
+    def fetch(self, session):
 
-        session = NtpdConnect(self.hostname)
-        if not session:
-            return (None)
 
         readvar = NtpdReadVar(session).stats
         readclock = NtpdClockVar(session).stats
@@ -473,11 +477,7 @@ class NtpMetrics(object):
 
         return(readvar)
 
-    def peers(self):
-        session = NtpdConnect(self.hostname)
-        
-        if not session:
-            return (None)
+    def peers(self, session):
 
         peers = collect_peer_varables(session)
         remotes = []
@@ -889,14 +889,70 @@ def NtpdConnect(host, primary_timeout=1500, secondary_timeout=1000):
     if not session.openhost(*hosts[0]):
         return (None)
     """ test if we can query the server """
+    
     try:
-        session.fetch_nonce()
+        ntp_packet = queryhost(host, False)
+        sys.stderr.write (f"ntp query: {ntp_packet}\n")
+        if not ntp_packet:
+            return (None)
     except ntp.packet.ControlException as e:
         sys.stderr.write (f"could not connect to host: {host} '{e}")
         return(None)
     
     return(session)
 
+def queryhost(server, concurrent, timeout=1, port=123):
+    "Query IP addresses associated with a specified host."
+    af = socket.AF_UNSPEC
+    try:
+        iptuples = socket.getaddrinfo(server, port,
+                                      af, socket.SOCK_DGRAM,
+                                      socket.IPPROTO_UDP)
+    except socket.gaierror as e:
+        log("lookup of %s failed, errno %d = %s" % (server, e.args[0], e.args[1]))
+        return []
+    sockets = []
+    packets = []
+    request = ntp.packet.SyncPacket()
+    request.transmit_timestamp = ntp.packet.SyncPacket.posix_to_ntp(
+        time.time())
+    packet = request.flatten()
+    needgap = (len(iptuples) > 1) and (gap > 0)
+    firstloop = True
+    for (family, socktype, proto, canonname, sockaddr) in iptuples:
+        if needgap and not firstloop:
+            time.sleep(gap)
+        if firstloop:
+            firstloop = False
+        s = socket.socket(family, socktype)
+        try:
+            s.sendto(packet, sockaddr)
+        except socket.error as e:
+            log("socket error on transmission: %s" % e)
+            continue
+        if concurrent:
+            sockets.append(s)
+        else:
+            r, _, _ = select.select([s], [], [], timeout)
+            if not r:
+                return []
+            read_append(s, packets, packet, sockaddr)
+        while sockets:
+            r, _, _ = select.select(sockets, [], [], timeout)
+            if not r:
+                return packets
+            for s in sockets:
+                read_append(s, packets, packet, sockaddr)
+                sockets.remove(s)
+    return packets
+
+def read_append(s, packets, packet, sockaddr):
+    d, a = s.recvfrom(1024)
+    pkt = ntp.packet.SyncPacket(d)
+    # pkt.hostname = server
+    pkt.resolved = sockaddr[0]
+    packets.append(pkt)
+    return packets
 
 def collect_peer_varables(session):
     peer_stat = []
