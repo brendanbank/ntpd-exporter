@@ -134,3 +134,4 @@ dmypy.json
 .settings
 ntp/
 /Pipfile.lock
+/ntp
