@@ -892,7 +892,7 @@ def NtpdConnect(host, primary_timeout=1500, secondary_timeout=1000):
     
     try:
         ntp_packet = queryhost(host, False)
-        sys.stderr.write (f"ntp query: {ntp_packet}\n")
+        #sys.stderr.write (f"ntp query: {ntp_packet}\n")
         if not ntp_packet:
             return (None)
     except ntp.packet.ControlException as e:
